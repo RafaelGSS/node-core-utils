@@ -7,6 +7,7 @@ export const describe = 'Manage an in-progress release or start a new one.';
 
 const PREPARE = 'prepare';
 const PROMOTE = 'promote';
+const CONTINUE = 'continue';
 
 const releaseOptions = {
   prepare: {
@@ -19,6 +20,11 @@ const releaseOptions = {
   },
   security: {
     describe: 'Demarcate the new security release as a security release',
+    type: 'boolean'
+  },
+  continue: {
+    alias: 'c',
+    describe: 'Continue the release session',
     type: 'boolean'
   },
   startLTS: {
@@ -38,7 +44,9 @@ export function builder(yargs) {
     .example('git node release --prepare 1.2.3',
       'Prepare a release of Node.js tagged v1.2.3')
     .example('git node --prepare --startLTS',
-      'Prepare the first LTS release');
+      'Prepare the first LTS release')
+    .example('git node release --continue',
+      'Continue the current release session');
 }
 
 export function handler(argv) {
@@ -46,6 +54,8 @@ export function handler(argv) {
     return release(PREPARE, argv);
   } else if (argv.promote) {
     return release(PROMOTE, argv);
+  } else if (argv.continue) {
+    return release(CONTINUE, argv);
   }
 
   // If more than one action is provided or no valid action
@@ -67,11 +77,13 @@ function release(state, argv) {
 }
 
 async function main(state, argv, cli, dir) {
+  const prep = new ReleasePreparation(argv, cli, dir);
+
+  if (state !== CONTINUE && prep.warnForWrongBranch()) {
+    return;
+  }
+
   if (state === PREPARE) {
-    const prep = new ReleasePreparation(argv, cli, dir);
-
-    if (prep.warnForWrongBranch()) return;
-
     // If the new version was automatically calculated, confirm it.
     if (!argv.newVersion) {
       const create = await cli.prompt(
