@@ -21,6 +21,10 @@ const releaseOptions = {
     describe: 'Demarcate the new security release as a security release',
     type: 'boolean'
   },
+  filterLabel: {
+    describe: 'Labels separated by "," to filter security PRs',
+    type: 'string'
+  },
   startLTS: {
     describe: 'Mark the release as the transition from Current to LTS',
     type: 'boolean'
@@ -70,7 +74,7 @@ async function main(state, argv, cli, dir) {
   if (state === PREPARE) {
     const prep = new ReleasePreparation(argv, cli, dir);
 
-    if (prep.warnForWrongBranch()) return;
+    // if (prep.warnForWrongBranch()) return;
 
     // If the new version was automatically calculated, confirm it.
     if (!argv.newVersion) {
